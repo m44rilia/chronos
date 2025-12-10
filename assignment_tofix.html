@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Rubik's Cube Slice Rotation - Single Cubelet Version</title>
+    <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
+<style>
+#rubiks-menu {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 9999;
+  background: rgba(20,20,20,0.92);
+  padding: 18px;
+  border-radius: 14px;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.55);
+  font-family: 'Segoe UI', sans-serif;
+  width: 340px;
+  color: #eee;
+  backdrop-filter: blur(4px);
+}
+
+#rubiks-menu h2 {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+  text-align: center;
+  color: #fff;
+  font-weight: 700;
+}
+
+.group-title {
+  margin-top: 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #ddd;
+  border-left: 4px solid #4a90e2;
+  padding-left: 6px;
+  margin-bottom: 6px;
+}
+
+.button-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px; /* <-- μεγαλύτερη απόσταση μεταξύ των κουμπιών */
+  margin-bottom: 14px; /* <-- μεγαλύτερη απόσταση μεταξύ των ομάδων */
+}
+
+#rubiks-menu button {
+  padding: 6px 0;
+  border-radius: 8px;
+  border: none;
+  background-color: #0d6efd;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 12px;
+  transition: 0.2s;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+
+#rubiks-menu button:hover {
+  background-color: #0a58ca;
+  transform: scale(1.07);
+}
+</style>
+
+  </head>
+  <body>
+    <div id="rubiks-menu">
+	<button onclick="shuffleCube()">🔀 Shuffle</button><br><br>
+	<button onclick="solveCube()">✔ Solve Cube</button><br><br>
+      <b>Rotate Slice (grouped, centered):</b><br>
+      <button onclick="rotateSlice('U')">U (Top, y=3)</button>
+	  <button onclick="rotateSlice('U1')">U1 (Reverse_Top, y=3)</button>
+	  <button onclick="rotateSlice('M')">M (Middle, y=2)</button>
+	  <button onclick="rotateSlice('M_1')">M_1 (Reverse_Middle, y=2)</button>
+      <button onclick="rotateSlice('D')">D (Bottom, y=1)</button>
+	  <button onclick="rotateSlice('D1')">D1 (Reverse_Bottom, y=1)</button>
+      <button onclick="rotateSlice('L')">L (Left, x=-1)</button>
+	  <button onclick="rotateSlice('L1')">L1 (Reverse_Left, x=-1)</button>
+	  <button onclick="rotateSlice('M1')">M1 (Middle1, x=0)</button>
+	  <button onclick="rotateSlice('M1_1')">M1_1 (Reverse_Middle1, x=0)</button>
+      <button onclick="rotateSlice('R')">R (Right, x=1)</button>
+	  <button onclick="rotateSlice('R1')">R1 (Reverse_Right, x=1)</button>
+      <button onclick="rotateSlice('F')">F (Front, z=-2)</button>
+	  <button onclick="rotateSlice('F1')">F1 (Reverse_Front, z=-2)</button>
+	  <button onclick="rotateSlice('M2')">M2 (Middle2, z=-3)</button>
+	  <button onclick="rotateSlice('M2_1')">M2_1 (Reverse_Middle2, z=-3)</button>
+      <button onclick="rotateSlice('B')">B (Back, z=-4)</button>
+	  <button onclick="rotateSlice('B1')">B1 (Reverse_Back, z=-4)</button>
+	  
+    </div>
+    <a-scene>
+      <a-assets>
+        <a-asset-item id="cube-model" src="https://kostasgian21.github.io/computer_graphics/rubiks_cube_standard_solid_v3.glb"></a-asset-item>
+        <img id="skyTexture" src="https://raw.githubusercontent.com/m44rilia/chronos/main/360.jpg" crossorigin="anonymous"/>
+      </a-assets>
+      <a-sky src="#skyTexture"></a-sky>
+      <a-entity light="type: directional; intensity: 8; color:#ffffff" position="5 10 5" rotation="-45 45 0"></a-entity>
+      <a-entity light="type: ambient; intensity: 3; color:#ffffff"></a-entity>
+      <a-entity light="type: point; intensity:5; distance:10; decay:2" position="3 3 3"></a-entity>
+      <a-entity light="type: point; intensity:5; distance:10; decay:2" position="-3 3 3"></a-entity>
+      <a-entity light="type: directional; intensity:2; color:#ffffff" position="-5 5 -5"></a-entity>
+
+      <a-entity id="cube-cluster"></a-entity>
+      <a-plane position="0 0 -4" rotation="-90 0 0" width="4" height="4" color="#7BC8A4"></a-plane>
+    </a-scene>
+
+    <script>
+	let isRotating = false;
+    // Cube parameters
+    const positions = [-1, 0, 1];
+    const layersY = [1, 2, 3];
+    const layersZ = [-2, -3, -4];
+    const cubeSize = 0.8;
+    const model = '#cube-model';
+
+    // Slices definitions, with their centers and match functions
+    const sliceDefs = {
+	  // y axis
+	  // gia y = 3
+      U:   {center: [0,3,-3], match: (x,y,z) => y===3, axis: 'y', angle: 90},      // Top row
+      U1:  {center:[0,3,-3], match:(x,y,z)=>y===3, axis:'y', angle:-90},          // anapoda top row
+	  
+      // gia y = 2
+	  M: {center: [0,2,-3],  match: (x,y,z) => y===2, axis: 'y', angle: 90},      // Middle horizontal slice
+	  M_1: {center: [0,2,-3],  match: (x,y,z) => y===2, axis: 'y', angle:-90},      // reverse Middle horizontal slice
+	
+	  // gia y = 1
+      D:  {center: [0,1,-3],  match: (x,y,z) => y===1, axis: 'y', angle: 90},     // Bottom row
+	  D1:  {center: [0,1,-3],  match: (x,y,z) => y===1, axis: 'y', angle: -90},     // reverse Bottom row
+	  
+	  // x axis
+	  // gia x = -1
+      L:  {center: [-1,2,-3], match: (x,y,z) => x===-1, axis: 'x', angle: 90},    // Left column
+	  L1:  {center: [-1,2,-3], match: (x,y,z) => x===-1, axis: 'x', angle: -90},    // Reverse Left column
+	  
+	  // gia x = 0
+	  M1:  {center: [0,2,-3], match: (x,y,z) => x===0, axis: 'x', angle: 90},    // Middle column
+	  M1_1:  {center: [0,2,-3], match: (x,y,z) => x===0, axis: 'x', angle: -90},    // Reverse Middle column
+	  
+	  // gia x = 1
+      R:  {center: [1,2,-3],  match: (x,y,z) => x===1, axis: 'x', angle: 90},      // Right column
+	  R1:  {center: [1,2,-3],  match: (x,y,z) => x===1, axis: 'x', angle: -90},      // Reverse Right column
+	  
+	  // z axis
+	  // gia z = -2
+      F:  {center: [0,2,-2],  match: (x,y,z) => z===-2, axis: 'z', angle: 90},     // Front slice
+	  F1:  {center: [0,2,-2],  match: (x,y,z) => z===-2, axis: 'z', angle: -90},     // Reverse Front slice
+	  
+	  // gia z = -3
+	  M2:  {center: [0,2,-3],  match: (x,y,z) => z===-3, axis: 'z', angle: 90},     // Middle slice
+	  M2_1:  {center: [0,2,-3],  match: (x,y,z) => z===-3, axis: 'z', angle: -90},     //Reverse Middle slice
+	  
+	  // gia z = -4
+      B:  {center: [0,2,-4],  match: (x,y,z) => z===-4, axis: 'z', angle: 90},    // Back slice
+	  B1:  {center: [0,2,-4],  match: (x,y,z) => z===-4, axis: 'z', angle: -90},    // Reverse Back slice
+    };
+	const oppositeMove = {
+  "U":"U1", "U1":"U",
+  "M":"M_1", "M_1":"M",
+  "D":"D1", "D1":"D",
+  "L":"L1", "L1":"L",
+  "M1":"M1_1", "M1_1":"M1",
+  "R":"R1", "R1":"R",
+  "F":"F1", "F1":"F",
+  "M2":"M2_1", "M2_1":"M2",
+  "B":"B1", "B1":"B"
+};
+
+    // Create all cubelets under cube-cluster, no duplicates
+    const cluster = document.getElementById('cube-cluster');
+    let cubelets = [];
+    for (let y of layersY) {
+      for (let x of positions) {
+        for (let z of layersZ) {
+          let cubelet = document.createElement('a-entity');
+          cubelet.setAttribute('gltf-model', model);
+          cubelet.setAttribute('position', `${x} ${y} ${z}`);
+          cubelet.setAttribute('scale', `${cubeSize} ${cubeSize} ${cubeSize}`);
+          cubelet.setAttribute('rotation', `0 0 0`);
+          cubelet.setAttribute('data-x', x);
+          cubelet.setAttribute('data-y', y);
+          cubelet.setAttribute('data-z', z);
+          cluster.appendChild(cubelet);
+          cubelets.push(cubelet);
+        }
+      }
+    }
+    let moveHistory = [];
+
+    // Utility: Convert string rotation to object
+    function parseRotation(rot) {
+      if (typeof rot === 'string') {
+        let arr = rot.trim().split(/\s+/).map(Number);
+        return {x: arr[0]||0, y: arr[1]||0, z: arr[2]||0};
+      }
+      return rot || {x:0, y:0, z:0};
+    }
+
+function rotateSlice(face, callback) {
+  if (isRotating) return; // Prevent overlapping moves
+  if (callback !== "solve") moveHistory.push(face);
+  isRotating = true;
+
+  const sliceDef = sliceDefs[face];
+  if (!sliceDef) {
+    isRotating = false;
+    return;
+  }
+
+  const {center, match, axis, angle} = sliceDef;
+
+  // Find affected cubelets
+  let affected = cubelets.filter(cubelet => {
+    const x = parseInt(cubelet.getAttribute('data-x'));
+    const y = parseInt(cubelet.getAttribute('data-y'));
+    const z = parseInt(cubelet.getAttribute('data-z'));
+    return match(x,y,z);
+  });
+
+  affected.forEach(cubelet => {
+    let pos = cubelet.getAttribute('position');
+    let rot = parseRotation(cubelet.getAttribute('rotation'));
+
+    let rel = {
+      x: pos.x - center[0],
+      y: pos.y - center[1],
+      z: pos.z - center[2]
+    };
+
+    let rad = angle * Math.PI/180;
+    let newRel = {...rel};
+
+    if (axis === 'x') {
+      newRel.y = rel.y * Math.cos(rad) - rel.z * Math.sin(rad);
+      newRel.z = rel.y * Math.sin(rad) + rel.z * Math.cos(rad);
+    } else if (axis === 'y') {
+      newRel.x = rel.x * Math.cos(rad) - rel.z * Math.sin(rad);
+      newRel.z = rel.x * Math.sin(rad) + rel.z * Math.cos(rad);
+    } else if (axis === 'z') {
+      newRel.x = rel.x * Math.cos(rad) - rel.y * Math.sin(rad);
+      newRel.y = rel.x * Math.sin(rad) + rel.y * Math.cos(rad);
+    }
+
+    let newPos = {
+      x: center[0] + Math.round(newRel.x),
+      y: center[1] + Math.round(newRel.y),
+      z: center[2] + Math.round(newRel.z)
+    };
+
+    cubelet.setAttribute('animation__pos', {
+      property: 'position',
+      to: `${newPos.x} ${newPos.y} ${newPos.z}`,
+      dur: 300,
+      easing: 'easeInOutQuad'
+    });
+
+    let newRot = {...rot};
+    if (axis === 'x') newRot.x += angle;
+    if (axis === 'y') newRot.y += angle;
+    if (axis === 'z') newRot.z += angle;
+
+    cubelet.setAttribute('animation__rot', {
+      property: 'rotation',
+      to: `${newRot.x} ${newRot.y} ${newRot.z}`,
+      dur: 300,
+      easing: 'easeInOutQuad'
+    });
+
+    setTimeout(() => {
+      cubelet.setAttribute('position', `${newPos.x} ${newPos.y} ${newPos.z}`);
+      cubelet.setAttribute('rotation', `${newRot.x} ${newRot.y} ${newRot.z}`);
+      cubelet.setAttribute('data-x', newPos.x);
+      cubelet.setAttribute('data-y', newPos.y);
+      cubelet.setAttribute('data-z', newPos.z);
+      cubelet.removeAttribute('animation__pos');
+      cubelet.removeAttribute('animation__rot');
+    }, 650);
+  });
+
+  // Allow next move after finish
+  setTimeout(() => {
+    isRotating = false;
+    if (callback) callback();
+  }, 660);
+}
+
+    window.rotateSlice = rotateSlice;
+function shuffleCube(moves = 12) {
+  const availableMoves = Object.keys(sliceDefs);
+  let count = 0;
+
+  function nextMove() {
+    if (count >= moves) return;
+    let move = availableMoves[Math.floor(Math.random() * availableMoves.length)];
+    rotateSlice(move, () => {
+      count++;
+      setTimeout(nextMove, 80);
+    });
+  }
+
+  nextMove();
+}
+function solveCube() {
+  if (isRotating) return;
+  if (moveHistory.length === 0) return;
+
+  function doNext() {
+    if (moveHistory.length === 0) return;
+    let last = moveHistory.pop();
+    let reverseMove = oppositeMove[last];
+    rotateSlice(reverseMove, "solve");
+    setTimeout(doNext, 700);
+  }
+
+  doNext();
+}
+
+    </script>
+  </body>
+</html>
