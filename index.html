@@ -68,6 +68,7 @@
   <body>
     <div id="rubiks-menu">
 	<button onclick="shuffleCube()">🔀 Shuffle</button><br><br>
+	<button onclick="resetCube()">🔄 Reset Cube</button>
 	<button onclick="solveCube()">✔ Solve Cube</button><br><br>
       <b>Rotate Slice (grouped, centered):</b><br>
       <button onclick="rotateSlice('U')">U (Top, y=3)</button>
@@ -326,10 +327,21 @@ function solveCube() {
 
   doNext();
 }
+function resetCube() {
+  cubelets.forEach(c => {
+    let x = parseInt(c.getAttribute('data-x'));
+    let y = parseInt(c.getAttribute('data-y'));
+    let z = parseInt(c.getAttribute('data-z'));
+    c.setAttribute('position', `${x} ${y} ${z}`);
+    c.setAttribute('rotation', `0 0 0`);
+  });
+  moveHistory = [];
+}
 
     </script>
   </body>
 </html>
+
 
 
 
