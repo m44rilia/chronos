@@ -8,7 +8,7 @@
 #rubiks-menu {
   position: absolute;
   top: 10px;
-  left: 10px;
+  right: 10px;
   z-index: 9999;
   background: rgba(20,20,20,0.92);
   padding: 18px;
@@ -90,10 +90,11 @@
 	  <button onclick="rotateSlice('B1')">B1 (Reverse_Back, z=-4)</button>
 	  
     </div>
-    <a-scene>
+    <a-scene stats>
       <a-assets>
-        <a-asset-item id="cube-model" src="https://kostasgian21.github.io/computer_graphics/rubiks_cube_standard_solid_v3.glb"></a-asset-item>
-        <img id="skyTexture" src="https://raw.githubusercontent.com/m44rilia/chronos/main/360.jpg" crossorigin="anonymous"/>
+	    <a-asset-item id="my-cube" src="ergasia/my_cube.glb"></a-asset-item>
+        
+        <img id="skyTexture" src="https://raw.githubusercontent.com/m44rilia/chronos/main/image.jpg" crossorigin="anonymous"/>
       </a-assets>
       <a-sky src="#skyTexture"></a-sky>
       <a-entity light="type: directional; intensity: 8; color:#ffffff" position="5 10 5" rotation="-45 45 0"></a-entity>
@@ -103,7 +104,17 @@
       <a-entity light="type: directional; intensity:2; color:#ffffff" position="-5 5 -5"></a-entity>
 
       <a-entity id="cube-cluster"></a-entity>
-      <a-plane position="0 0 -4" rotation="-90 0 0" width="4" height="4" color="#7BC8A4"></a-plane>
+      
+	<a-text
+        value="Marilia"
+        position="0 0.6 0"
+        color="#ffeb3b"
+        scale="2 2 2"
+        align="center"
+        side="double"
+    ></a-text>
+
+
     </a-scene>
 
     <script>
@@ -113,7 +124,7 @@
     const layersY = [1, 2, 3];
     const layersZ = [-2, -3, -4];
     const cubeSize = 0.8;
-    const model = '#cube-model';
+    const model = '#my-cube';
 
     // Slices definitions, with their centers and match functions
     const sliceDefs = {
