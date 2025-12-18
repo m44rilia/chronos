@@ -70,6 +70,7 @@
 	<button onclick="shuffleCube()">🔀 Shuffle</button><br><br>
 	<button onclick="resetCube()">🔄 Reset Cube</button>
 	<button onclick="solveCube()">✔ Solve Cube</button><br><br>
+	<button onclick="resetCube()">🔄 Reset Cube</button>
       <b>Rotate Slice (grouped, centered):</b><br>
       <button onclick="rotateSlice('U')">U (Top, y=3)</button>
 	  <button onclick="rotateSlice('U1')">U1 (Reverse_Top, y=3)</button>
@@ -92,9 +93,10 @@
 	  
     </div>
     <a-scene stats>
-      <a-assets>
+       <a-assets>
         <a-asset-item id="cube-model" src="https://kostasgian21.github.io/computer_graphics/rubiks_cube_standard_solid_v3.glb"></a-asset-item>
         <img id="skyTexture" src="https://raw.githubusercontent.com/m44rilia/chronos/main/image.jpg" crossorigin="anonymous"/>
+		<a-asset-item id="ghost" src="https://raw.githubusercontent.com/m44rilia/chronos/main/ghost.glb"></a-asset-item>
       </a-assets>
       <a-sky src="#skyTexture"></a-sky>
       <a-entity light="type: directional; intensity: 8; color:#ffffff" position="5 10 5" rotation="-45 45 0"></a-entity>
@@ -102,9 +104,16 @@
       <a-entity light="type: point; intensity:5; distance:10; decay:2" position="3 3 3"></a-entity>
       <a-entity light="type: point; intensity:5; distance:10; decay:2" position="-3 3 3"></a-entity>
       <a-entity light="type: directional; intensity:2; color:#ffffff" position="-5 5 -5"></a-entity>
-
+     
       <a-entity id="cube-cluster"></a-entity>
-      
+	  
+	  <a-entity
+       gltf-model="#ghost"
+       position="6.5 -3 -3"  
+       scale="15 15 15"
+       rotation="0 -45 0">
+      </a-entity>
+	
 	<a-text
         value="Marilia"
         position="0 0.6 0"
@@ -327,6 +336,7 @@ function solveCube() {
 
   doNext();
 }
+
 function resetCube() {
   cubelets.forEach(c => {
     let x = parseInt(c.getAttribute('data-x'));
@@ -341,6 +351,7 @@ function resetCube() {
     </script>
   </body>
 </html>
+
 
 
 
